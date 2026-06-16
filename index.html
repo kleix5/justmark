@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persona Selector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-start: #e0c3fc;
+            --bg-gradient-end: #8ec5fc;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Main Button */
+        .cta-container {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #2d3748;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.5);
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #4a5568;
+            border: none;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+            color: #2b6cb0;
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 40, 60, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 900px;
+            max-height: 85vh;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        /* Modal Header */
+        .modal-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: #718096;
+        }
+
+        .close-btn:hover {
+            background: #edf2f7;
+            color: #1a202c;
+        }
+
+        .close-icon {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Modal Body */
+        .modal-body {
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        /* Grid Layout for Personas */
+        .persona-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 24px;
+        }
+
+        /* Persona Card */
+        .persona-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius);
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .persona-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-color, #cbd5e0);
+            transition: height 0.3s ease;
+        }
+
+        .persona-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+            border-color: transparent;
+        }
+
+        .persona-card:hover::before {
+            height: 6px;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+            background: var(--avatar-bg, #f7fafc);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .persona-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #2d3748;
+        }
+
+        .persona-role {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--accent-color, #718096);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .persona-desc {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .tags {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Scrollbar styling */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.75rem; }
+            .modal-header { padding: 16px 20px; }
+            .modal-body { padding: 20px; }
+            .persona-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cta-container">
+        <h1>User Persona Explorer</h1>
+        <button class="btn-primary" id="openModalBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            View Personas
+        </button>
+    </div>
+
+    <!-- Modal Structure -->
+    <div class="modal-overlay" id="personaModal" aria-modal="true" role="dialog" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Select a Persona</h2>
+                <button class="close-btn" id="closeModalBtn" aria-label="Close modal">
+                    <svg class="close-icon" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="persona-grid">
+                    <!-- Persona 1 -->
+                    <div class="persona-card" style="--accent-color: #3182ce; --avatar-bg: #ebf8ff;" onclick="selectPersona('The Visionary')">
+                        <div class="avatar">🚀</div>
+                        <div class="persona-name">Alex</div>
+                        <div class="persona-role">The Visionary</div>
+                        <p class="persona-desc">Early adopter who looks for cutting-edge features and long-term potential. Less concerned with minor bugs, more focused on the big picture.</p>
+                        <div class="tags">
+                            <span class="tag">Innovation</span>
+                            <span class="tag">Strategy</span>
+                        </div>
+                    </div>
+
+                    <!-- Persona 2 -->
+                    <div class="persona-card" style="--accent-color: #38a169; --avatar-bg: #f0fff4;" onclick="selectPersona('The Pragmatist')">
+                        <div class="avatar">📈</div>
+                        <div class="persona-name">Sarah</div>
+                        <div class="persona-role">The Pragmatist</div>
+                        <p class="persona-desc">Focused strictly on efficiency and ROI. Needs the tool to save time and reduce friction in their daily workflow. Values clear documentation.</p>
+                        <div class="tags">
+                            <span class="tag">Efficiency</span>
+                            <span class="tag">Results</span>
+                        </div>
+                    </div>
+
+                    <!-- Persona 3 -->
+                    <div class="persona-card" style="--accent-color: #d53f8c; --avatar-bg: #fff5f7;" onclick="selectPersona('The Empath')">
+                        <div class="avatar">🎨</div>
+                        <div class="persona-name">Marcus</div>
+                        <div class="persona-role">The Empath</div>
+                        <p class="persona-desc">Deeply cares about accessibility, inclusive design, and user delight. Highly sensitive to confusing interfaces and poor copy.</p>
+                        <div class="tags">
+                            <span class="tag">UX Design</span>
+                            <span class="tag">Accessibility</span>
+                        </div>
+                    </div>
+
+                    <!-- Persona 4 -->
+                    <div class="persona-card" style="--accent-color: #dd6b20; --avatar-bg: #fffaf0;" onclick="selectPersona('The Skeptic')">
+                        <div class="avatar">🛡️</div>
+                        <div class="persona-name">Elena</div>
+                        <div class="persona-role">The Skeptic</div>
+                        <p class="persona-desc">Security and compliance-minded. Looks for edge cases, data privacy guarantees, and robust error handling before trusting a platform.</p>
+                        <div class="tags">
+                            <span class="tag">Security</span>
+                            <span class="tag">Reliability</span>
+                        </div>
+                    </div>
+
+                    <!-- Persona 5 -->
+                    <div class="persona-card" style="--accent-color: #805ad5; --avatar-bg: #faf5ff;" onclick="selectPersona('The Minimalist')">
+                        <div class="avatar">🌱</div>
+                        <div class="persona-name">Julian</div>
+                        <div class="persona-role">The Minimalist</div>
+                        <p class="persona-desc">Wants a clean, distraction-free environment. Gets easily overwhelmed by feature bloat and excessive configuration options.</p>
+                        <div class="tags">
+                            <span class="tag">Simplicity</span>
+                            <span class="tag">Focus</span>
+                        </div>
+                    </div>
+
+                    <!-- Persona 6 -->
+                    <div class="persona-card" style="--accent-color: #e53e3e; --avatar-bg: #fff5f5;" onclick="selectPersona('The Power User')">
+                        <div class="avatar">⚡</div>
+                        <div class="persona-name">Maya</div>
+                        <div class="persona-role">The Power User</div>
+                        <p class="persona-desc">Highly technical and expects keyboard shortcuts, API access, and deep customization. Will heavily test the boundaries of your software.</p>
+                        <div class="tags">
+                            <span class="tag">Technical</span>
+                            <span class="tag">Customization</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('personaModal');
+        const btnOpen = document.getElementById('openModalBtn');
+        const btnClose = document.getElementById('closeModalBtn');
+
+        // Open Modal
+        btnOpen.addEventListener('click', () => {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        });
+
+        // Close Modal Function
+        const closeModal = () => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // Close via button
+        btnClose.addEventListener('click', closeModal);
+
+        // Close via clicking outside the modal content
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close via Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        function selectPersona(personaName) {
+            console.log(`Selected persona: ${personaName}`);
+            closeModal();
+        }
+    </script>
+</body>
+</html>
